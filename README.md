@@ -1,6 +1,6 @@
-# Kamando Abby · Food Tracker
+# EBT CARD ·
 
-A lightweight, offline-first web app for recording daily food-support payments sent to **Kamando Abby**.
+A lightweight, offline-first web app for recording daily food-support payments sent to **AMK**.
 
 ## Features
 
