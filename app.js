@@ -300,7 +300,7 @@ function buildPrintContent(filterKey = null) {
   }
 
   area.innerHTML = `
-    <h1>Kamando Abby · Food Support Log</h1>
+    <h1>AMK · EBT Log</h1>
     <p><small>Generated ${new Date().toLocaleString('en-KE')}</small></p>
 
     <div class="summary-box">
