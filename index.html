@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kamando Abby · Food Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="no-print">
+    <h1>Kamando Abby · Food Tracker</h1>
+    <p>Daily support log · Goal: KES 10,000 / month</p>
+  </header>
+
+  <div class="controls no-print">
+    <div class="month-nav">
+      <button id="prev-month" aria-label="Previous month">←</button>
+      <span class="month-label" id="month-label">October 2025</span>
+      <button id="next-month" aria-label="Next month">→</button>
+    </div>
+    <div class="actions-bar">
+      <button class="btn btn-secondary" id="btn-today">Today</button>
+      <button class="btn" id="btn-print">Export PDF Summary</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <section class="progress-section no-print">
+    <div class="progress-header">
+      <h2>Monthly Progress</h2>
+      <div class="progress-stats">
+        <strong id="total-sent">KES 0</strong> of KES 10,000
+        · <span id="remaining">KES 10,000 remaining</span>
+      </div>
+    </div>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+      <div class="progress-marker" id="progress-marker" style="left: 0%">0%</div>
+    </div>
+  </section>
+
+  <!-- Calendar -->
+  <section class="calendar-card no-print">
+    <div class="calendar-grid" id="calendar-grid">
+      <!-- headers + days injected by JS -->
+    </div>
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-swatch" style="background:var(--red)"></span>
+        0 – 200 KES
+      </div>
+      <div class="legend-item">
+        <span class="legend-swatch" style="background:var(--yellow)"></span>
+        201 – 349 KES
+      </div>
+      <div class="legend-item">
+        <span class="legend-swatch" style="background:var(--green)"></span>
+        350+ KES
+      </div>
+    </div>
+  </section>
+
+  <!-- Modal for add / edit -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <h3 id="modal-title">Record Payment</h3>
+      <div class="form-group">
+        <label for="tx-date">Date</label>
+        <input type="date" id="tx-date" readonly>
+      </div>
+      <div class="form-group">
+        <label for="tx-amount">Amount (KES)</label>
+        <input type="number" id="tx-amount" min="0" step="1" placeholder="e.g. 250">
+      </div>
+      <div class="form-group">
+        <label for="tx-note">Acknowledgement / Note</label>
+        <textarea id="tx-note" placeholder="Paste the M-Pesa / transfer confirmation message here…"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="btn-save">Save</button>
+        <button class="btn btn-secondary" id="btn-cancel">Cancel</button>
+        <button class="btn btn-danger" id="btn-delete" style="display:none">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Printable area (hidden on screen) -->
+  <div id="print-area"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
