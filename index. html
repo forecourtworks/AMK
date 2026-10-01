@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Food Stipend Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .print-container {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+            }
+        }
+        .print-only {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-amber-500 selection:text-slate-950">
+
+    <div class="max-w-4xl mx-auto px-4 py-8 no-print">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-slate-800 pb-6">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="text-3xl">🍲</span>
+                    <h1 class="text-2xl font-bold tracking-tight text-white">Daily Food Stipend Tracker</h1>
+                </div>
+                <p class="text-slate-400 text-sm mt-1">Manage and audit your daily KES 350 food remittances with M-Pesa note tracking.</p>
+            </div>
+            
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <input type="month" id="monthSelector" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <button onclick="window.print()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-sm transition shadow-lg shadow-amber-500/10 flex items-center gap-2 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    Export PDF
+                </button>
+            </div>
+        </header>
+
+        <!-- Summary Statistics Card -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-sm">
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Disbursed</p>
+                <p id="totalDisbursed" class="text-2xl font-bold text-amber-400 mt-1">KES 0</p>
+                <p class="text-xs text-slate-500 mt-2"><span id="paidDaysCount">0</span> of <span id="totalDaysInMonth">0</span> days paid</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-sm">
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Expected Monthly Budget</p>
+                <p id="expectedBudget" class="text-2xl font-bold text-slate-200 mt-1">KES 0</p>
+                <p class="text-xs text-slate-500 mt-2">At KES 350 flat daily rate</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-sm">
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Completion Rate</p>
+                <div class="flex items-center gap-3 mt-2">
+                    <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                        <div id="progressBar" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <span id="progressPercent" class="text-sm font-bold text-emerald-400">0%</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">Based on elapsed days</p>
+            </div>
+        </div>
+
+        <!-- Main Daily Ledger List -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+                <h2 class="font-semibold text-slate-200">Daily Breakdown & M-Pesa Notes</h2>
+                <span class="text-xs text-slate-400">Standard Daily Rate: <strong class="text-amber-400">KES 350</strong></span>
+            </div>
+            <div id="daysListContainer" class="divide-y divide-slate-800/60 max-h-[600px] overflow-y-auto">
+                <!-- Dynamic rows populate here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Printable PDF Template -->
+    <div class="print-only print-container p-8 bg-white text-slate-900">
+        <div class="flex justify-between items-start border-b-2 border-slate-900 pb-6 mb-6">
+            <div>
+                <h1 class="text-3xl font-black uppercase tracking-wider text-slate-900">Food Stipend Ledger</h1>
+                <p class="text-sm text-slate-600 mt-1">Formal Monthly Remittance & Disbursement Statement</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs uppercase font-bold text-slate-500">Target Period</p>
+                <p id="printMonthTitle" class="text-lg font-bold text-slate-900">-</p>
+                <p class="text-xs text-slate-500 mt-1">Generated: <span id="printGeneratedDate">-</span></p>
+            </div>
+        </div>
+
+        <!-- Print Summary Box -->
+        <div class="grid grid-cols-3 gap-4 bg-slate-100 p-4 rounded-lg mb-6 border border-slate-200">
+            <div>
+                <p class="text-xs text-slate-500 font-semibold uppercase">Total Disbursed</p>
+                <p id="printTotalAmount" class="text-xl font-bold text-slate-900">KES 0</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-500 font-semibold uppercase">Days Settled</p>
+                <p id="printTotalDays" class="text-xl font-bold text-slate-900">0 Days</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-500 font-semibold uppercase">Standard Rate</p>
+                <p class="text-xl font-bold text-slate-900">KES 350 / Day</p>
+            </div>
+        </div>
+
+        <!-- Print Table -->
+        <table class="w-full text-left border-collapse text-xs">
+            <thead>
+                <tr class="border-b-2 border-slate-900 text-slate-900 uppercase">
+                    <th class="py-3 px-2">Date</th>
+                    <th class="py-3 px-2">Status</th>
+                    <th class="py-3 px-2">M-Pesa Details / Notes</th>
+                    <th class="py-3 px-2 text-right">Amount (KES)</th>
+                    <th class="py-3 px-2 text-right">Cumulative (KES)</th>
+                </tr>
+            </thead>
+            <tbody id="printTableBody" class="divide-y divide-slate-200">
+                <!-- Dynamic rows populate here -->
+            </tbody>
+        </table>
+
+        <!-- Print Signoff Footer -->
+        <div class="mt-12 pt-6 border-t border-slate-300 flex justify-between text-xs text-slate-500">
+            <p>Verified Daily Food Stipend Tracking System</p>
+            <p>Page 1 of 1</p>
+        </div>
+    </div>
+
+    <!-- Application Script Logic -->
+    <script>
+        const DAILY_RATE = 350;
+        
+        function getInitialMonth() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            return `${year}-${month}`;
+        }
+
+        let currentMonthStr = getInitialMonth();
+        const monthSelector = document.getElementById('monthSelector');
+        monthSelector.value = currentMonthStr;
+
+        monthSelector.addEventListener('change', (e) => {
+            currentMonthStr = e.target.value;
+            renderApp();
+        });
+
+        function getStorageKey(monthStr) {
+            return `food_stipend_${monthStr}`;
+        }
+
+        function loadMonthData(monthStr) {
+            const saved = localStorage.getItem(getStorageKey(monthStr));
+            if (saved) {
+                try { return JSON.parse(saved); } catch (e) { /* fallback */ }
+            }
+            return {}; // Format: { "YYYY-MM-DD": { paid: true/false, note: "..." } }
+        }
+
+        function saveMonthData(monthStr, data) {
+            localStorage.setItem(getStorageKey(monthStr), JSON.stringify(data));
+        }
+
+        function parseMpesaNote(rawText) {
+            if (!rawText) return { code: '', cleanNote: '' };
+            // Simple M-Pesa regex grabber for confirmation codes like QG78... or similar
+            const codeMatch = rawText.match(/\b([A-Z0-9]{10})\b/);
+            const code = codeMatch ? codeMatch[1] : '';
+            return { code, cleanNote: rawText.trim() };
+        }
+
+        function getDaysInMonth(year, month) {
+            return new Date(year, month, 0).getDate();
+        }
+
+        function renderApp() {
+            const [year, month] = currentMonthStr.split('-').map(Number);
+            const totalDays = getDaysInMonth(year, month);
+            const monthData = loadMonthData(currentMonthStr);
+
+            const container = document.getElementById('daysListContainer');
+            const printTableBody = document.getElementById('printTableBody');
+            
+            container.innerHTML = '';
+            printTableBody.innerHTML = '';
+
+            let cumulativeTotal = 0;
+            let paidCount = 0;
+
+            for (let day = 1; day <= totalDays; day++) {
+                const dayStr = String(day).padStart(2, '0');
+                const dateKey = `${currentMonthStr}-${dayStr}`;
+                
+                const dayRecord = monthData[dateKey] || { paid: false, note: '' };
+                if (dayRecord.paid) {
+                    cumulativeTotal += DAILY_RATE;
+                    paidCount++;
+                }
+
+                // --- UI Row Build ---
+                const rowDiv = document.createElement('div');
+                rowDiv.className = `p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition hover:bg-slate-900/80 ${dayRecord.paid ? 'bg-emerald-950/10' : ''}`;
+                
+                rowDiv.innerHTML = `
+                    <div class="flex items-center gap-4 w-full md:w-auto">
+                        <input type="checkbox" ${dayRecord.paid ? 'checked' : ''} data-date="${dateKey}" class="paid-checkbox w-5 h-5 accent-amber-500 rounded cursor-pointer">
+                        <div>
+                            <p class="font-bold text-slate-200 text-sm">${dateKey}</p>
+                            <p class="text-xs text-amber-400 font-medium">KES ${DAILY_RATE}</p>
+                        </div>
+                    </div>
+                    <div class="w-full md:flex-1 md:max-w-md">
+                        <input type="text" value="${escapeHtml(dayRecord.note)}" data-date="${dateKey}" placeholder="Paste M-Pesa message / note here..." class="note-input w-full bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-lg px-3 py-2 focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                    <div class="flex items-center justify-between w-full md:w-auto gap-4">
+                        <span class="text-xs px-2.5 py-1 rounded-full font-medium ${dayRecord.paid ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'}">
+                            ${dayRecord.paid ? 'Paid' : 'Pending'}
+                        </span>
+                        <span class="text-xs font-mono text-slate-400">Cumul: KES ${cumulativeTotal.toLocaleString()}</span>
+                    </div>
+                `;
+                container.appendChild(rowDiv);
+
+                // --- Print Row Build ---
+                const printTr = document.createElement('tr');
+                printTr.className = 'border-b border-slate-200';
+                printTr.innerHTML = `
+                    <td class="py-2.5 px-2 font-medium text-slate-900">${dateKey}</td>
+                    <td class="py-2.5 px-2">
+                        <span class="font-bold ${dayRecord.paid ? 'text-emerald-700' : 'text-slate-400'}">
+                            ${dayRecord.paid ? 'PAID' : 'PENDING'}
+                        </span>
+                    </td>
+                    <td class="py-2.5 px-2 text-slate-700 max-w-xs truncate">${escapeHtml(dayRecord.note) || '-'}</td>
+                    <td class="py-2.5 px-2 text-right font-mono">${dayRecord.paid ? '350' : '0'}</td>
+                    <td class="py-2.5 px-2 text-right font-mono font-bold">${cumulativeTotal.toLocaleString()}</td>
+                `;
+                printTableBody.appendChild(printTr);
+            }
+
+            // Update Summary Card Statistics
+            const expectedMonthlyBudget = totalDays * DAILY_RATE;
+            document.getElementById('totalDisbursed').innerText = `KES ${cumulativeTotal.toLocaleString()}`;
+            document.getElementById('paidDaysCount').innerText = paidCount;
+            document.getElementById('totalDaysInMonth').innerText = totalDays;
+            document.getElementById('expectedBudget').innerText = `KES ${expectedMonthlyBudget.toLocaleString()}`;
+            
+            const progressPercent = Math.round((paidCount / totalDays) * 100);
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').innerText = `${progressPercent}%`;
+
+            // Update Print Header Details
+            const dateObj = new Date(year, month - 1, 1);
+            const monthName = dateObj.toLocaleString('default', { month: 'long', year: 'numeric' });
+            document.getElementById('printMonthTitle').innerText = monthName;
+            document.getElementById('printGeneratedDate').innerText = new Date().toLocaleDateString();
+            document.getElementById('printTotalAmount').innerText = `KES ${cumulativeTotal.toLocaleString()}`;
+            document.getElementById('printTotalDays').innerText = `${paidCount} / ${totalDays} Days`;
+
+            // Attach Event Listeners for live data editing
+            attachEventListeners();
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function attachEventListeners() {
+            const monthData = loadMonthData(currentMonthStr);
+
+            document.querySelectorAll('.paid-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', (e) => {
+                    const date = e.target.getAttribute('data-date');
+                    if (!monthData[date]) monthData[date] = { paid: false, note: '' };
+                    monthData[date].paid = e.target.checked;
+                    saveMonthData(currentMonthStr, monthData);
+                    renderApp();
+                });
+            });
+
+            document.querySelectorAll('.note-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const date = e.target.getAttribute('data-date');
+                    if (!monthData[date]) monthData[date] = { paid: false, note: '' };
+                    monthData[date].note = e.target.value;
+                    saveMonthData(currentMonthStr, monthData);
+                });
+                
+                // Also update print view live on typing
+                input.addEventListener('blur', () => {
+                    renderApp();
+                });
+            });
+        }
+
+        // Initial render execution
+        renderApp();
+    </script>
+</body>
+</html>
