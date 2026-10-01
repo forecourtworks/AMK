@@ -1,6 +1,7 @@
 // ========== Data layer ==========
 const STORAGE_KEY = 'kamando-abby-transactions';
 const GOAL = 10000;
+const DAILY_MAX = 350;
 
 function loadTransactions() {
   try {
@@ -27,9 +28,11 @@ function dateKey(y, m, d) {
 }
 
 function getColorClass(amount) {
-  if (amount <= 200) return 'red';
-  if (amount <= 349) return 'yellow';
-  return 'green';
+  const a = Number(amount) || 0;
+  if (a === 0) return 'red';
+  if (a <= 150) return 'yellow';
+  if (a <= 300) return 'blue';
+  return 'green'; // 301–350
 }
 
 function formatKES(n) {
@@ -185,19 +188,59 @@ function closeModal() {
   editingKey = null;
 }
 
+function addDays(dateStr, days) {
+  // dateStr = "YYYY-MM-DD"
+  const d = new Date(dateStr + 'T12:00:00'); // noon avoids DST issues
+  d.setDate(d.getDate() + days);
+  return dateKey(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
 function saveTransaction() {
-  const amount = parseFloat(document.getElementById('tx-amount').value);
+  const rawAmount = parseFloat(document.getElementById('tx-amount').value);
   const note = document.getElementById('tx-note').value.trim();
 
-  if (isNaN(amount) || amount < 0) {
+  if (isNaN(rawAmount) || rawAmount < 0) {
     alert('Please enter a valid amount (0 or greater).');
     return;
   }
 
-  transactions[editingKey] = { amount: Math.round(amount), note };
+  let remaining = Math.round(rawAmount);
+  let currentKey = editingKey;
+  let dayOffset = 0;
+  const distributed = [];
+
+  // Distribute across consecutive days, max DAILY_MAX per day
+  while (remaining > 0) {
+    const credit = Math.min(DAILY_MAX, remaining);
+    const key = addDays(editingKey, dayOffset);
+
+    // Keep any existing note only on the original day; later days get empty note
+    const existingNote = (dayOffset === 0) ? note : (transactions[key]?.note || '');
+
+    transactions[key] = {
+      amount: credit,
+      note: existingNote
+    };
+
+    distributed.push({ key, amount: credit });
+    remaining -= credit;
+    dayOffset++;
+
+    // Safety: prevent infinite loop (e.g. > 10 years of days)
+    if (dayOffset > 3650) break;
+  }
+
   saveTransactions(transactions);
   closeModal();
   renderCalendar();
+
+  // Inform user when spill-over occurred
+  if (distributed.length > 1) {
+    const summary = distributed
+      .map(d => `${d.key}: ${formatKES(d.amount)}`)
+      .join('\n');
+    alert(`Amount exceeded daily maximum of ${DAILY_MAX} KES.\n\nDistributed as:\n${summary}`);
+  }
 }
 
 function deleteTransaction() {
@@ -235,7 +278,12 @@ function buildPrintContent(filterKey = null) {
 
   let tableRows = rows.map(r => {
     const color = getColorClass(r.amount);
-    const colorHex = color === 'red' ? '#e53935' : color === 'yellow' ? '#fdd835' : '#43a047';
+    const colorHex = {
+      red: '#e53935',
+      yellow: '#fdd835',
+      blue: '#1e88e5',
+      green: '#43a047'
+    }[color] || '#43a047';
     return `
       <tr>
         <td>${r.date}</td>
@@ -286,9 +334,11 @@ function buildPrintContent(filterKey = null) {
 
     <p style="margin-top:18pt; font-size:9pt; color:#555;">
       Colour key: 
-      <span class="color-dot" style="background:#e53935"></span> 0–200 &nbsp;
-      <span class="color-dot" style="background:#fdd835"></span> 201–349 &nbsp;
-      <span class="color-dot" style="background:#43a047"></span> 350+
+      <span class="color-dot" style="background:#e53935"></span> 0 &nbsp;
+      <span class="color-dot" style="background:#fdd835"></span> 1–150 &nbsp;
+      <span class="color-dot" style="background:#1e88e5"></span> 151–300 &nbsp;
+      <span class="color-dot" style="background:#43a047"></span> 301–350
+      &nbsp;·&nbsp; Daily maximum: 350 KES
     </p>
   `;
 }

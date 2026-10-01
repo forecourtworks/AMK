@@ -1,6 +1,7 @@
 :root {
   --red: #e53935;
   --yellow: #fdd835;
+  --blue: #1e88e5;
   --green: #43a047;
   --primary: #1565c0;
   --bg: #f5f7fa;
@@ -228,6 +229,7 @@ header p {
 
 .flag.red { background: var(--red); }
 .flag.yellow { background: var(--yellow); color: #333; }
+.flag.blue { background: var(--blue); }
 .flag.green { background: var(--green); }
 
 .note-indicator {
